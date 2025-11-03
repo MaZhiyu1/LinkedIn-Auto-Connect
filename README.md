@@ -1008,5 +1008,3 @@ If this extension helped you, please consider:
 - [Request Feature](https://github.com/yourusername/linkedin-auto-connect/issues)
 
 ---
-
-**Version:** 1.0.1 | **Last Updated:** 2024 | **License:** MIT
