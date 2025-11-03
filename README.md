@@ -81,7 +81,7 @@ Create an `icons/` folder in the extension directory and add three icon files:
 
 - Use any image editor (Paint, GIMP, Photoshop)
 - Fill with LinkedIn blue (#0077B5)
-- Add white "LA" text or simple design
+- Add white "LN" text or simple design
 - Save as PNG
 
 **Or use placeholder icons:**
