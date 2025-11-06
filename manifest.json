@@ -5,8 +5,7 @@
   "description": "Automatically send connection requests on LinkedIn with optional custom notes",
   "permissions": [
     "storage",
-    "activeTab",
-    "scripting"
+    "activeTab"
   ],
   "host_permissions": [
     "https://www.linkedin.com/*"

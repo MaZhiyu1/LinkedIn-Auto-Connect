@@ -60,8 +60,9 @@ function stopAutoConnect() {
 // Process all connection buttons on the page
 async function processConnections() {
   let scrollAttempts = 0;
-  const maxScrollAttempts = 20;
+  const maxScrollAttempts = 5; // Reduced from 20 to 5 for faster pagination
   let currentPage = 1;
+  let lastButtonCount = 0; // Track if scrolling is finding new buttons
 
   while (isRunning && connectionsSent < settings.maxConnections) {
     // Find all "Connect" buttons on the page
@@ -70,11 +71,21 @@ async function processConnections() {
     if (connectButtons.length === 0) {
       console.log('No more connect buttons found on current page');
       
-      // Try scrolling to load more
+      // Try scrolling to load more, but only if we haven't tried too many times
       if (scrollAttempts < maxScrollAttempts) {
         await scrollPage();
         await sleep(settings.scrollDelay * 1000);
         scrollAttempts++;
+        
+        // Check if scrolling helped find new buttons
+        const newButtonCount = findConnectButtons().length;
+        if (newButtonCount === lastButtonCount && scrollAttempts >= 3) {
+          // Scrolling isn't finding new buttons after 3 attempts - move to next page
+          console.log('Scrolling not finding new buttons, moving to next page...');
+          scrollAttempts = maxScrollAttempts; // Force next page logic
+        }
+        lastButtonCount = newButtonCount;
+        
         continue;
       } else {
         // No more buttons and max scroll reached
@@ -87,11 +98,14 @@ async function processConnections() {
             currentPage++;
             console.log(`Navigated to page ${currentPage}`);
             
-            // Wait for page to load
-            await sleep(3000);
+            // Wait for page to load (use scroll delay setting * 1.5 for page loads)
+            const pageLoadDelay = settings.scrollDelay * 1500; // 1.5x the scroll delay
+            console.log(`Waiting ${pageLoadDelay/1000}s for page to load...`);
+            await sleep(pageLoadDelay);
             
             // Reset scroll attempts and processed buttons for new page
             scrollAttempts = 0;
+            lastButtonCount = 0;
             processedButtons.clear();
             
             // Continue processing new page
@@ -109,6 +123,7 @@ async function processConnections() {
 
     // Reset scroll attempts when we find buttons
     scrollAttempts = 0;
+    lastButtonCount = connectButtons.length;
 
     // Process each button
     for (const button of connectButtons) {
@@ -213,62 +228,6 @@ function findConnectButtons() {
   });
 
   return buttons;
-}
-
-// Click the "Next" button to navigate to the next page
-async function clickNextPageButton() {
-  try {
-    // Try multiple selectors for the Next button
-    const nextButtonSelectors = [
-      'button[aria-label="Next"]',
-      'button[aria-label*="next" i]',
-      'button.artdeco-pagination__button--next',
-      'button:has(span:contains("Next"))',
-      '.artdeco-pagination__button--next'
-    ];
-
-    let nextButton = null;
-
-    // Try each selector
-    for (const selector of nextButtonSelectors) {
-      const buttons = document.querySelectorAll(selector);
-      for (const button of buttons) {
-        if (!button.disabled && button.offsetParent !== null) {
-          nextButton = button;
-          break;
-        }
-      }
-      if (nextButton) break;
-    }
-
-    // Fallback: search for any button with "Next" in text or aria-label
-    if (!nextButton) {
-      const allButtons = document.querySelectorAll('button');
-      for (const button of allButtons) {
-        const text = button.textContent.trim().toLowerCase();
-        const ariaLabel = (button.getAttribute('aria-label') || '').toLowerCase();
-        
-        if ((text.includes('next') || ariaLabel.includes('next')) && 
-            !button.disabled && 
-            button.offsetParent !== null) {
-          nextButton = button;
-          break;
-        }
-      }
-    }
-
-    if (nextButton) {
-      console.log('Found Next button, clicking...');
-      nextButton.click();
-      return true;
-    } else {
-      console.log('Next button not found or disabled');
-      return false;
-    }
-  } catch (error) {
-    console.error('Error clicking next page button:', error);
-    return false;
-  }
 }
 
 // Process a single connect button
